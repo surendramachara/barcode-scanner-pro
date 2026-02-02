@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Courier Parcel Management System - Enhanced</title>
+    
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            touch-action: manipulation;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+        }
+
+        .stat-card:active {
+            transform: translateY(-2px);
+        }
+
+        .stat-card h3 {
+            color: #999;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            background: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: all 0.3s;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .tab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .section {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .scanner-box {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #667eea;
+        }
+
+        .scanner-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .scanner-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-success {
+            background: #4ade80;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #22c55e;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.9em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+
+        /* NEW: Re-assignment Section Styles */
+        .reassign-container {
+            background: #fff9e6;
+            border: 3px solid #f59e0b;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .reassign-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #fcd34d;
+        }
+
+        .reassign-header h3 {
+            color: #92400e;
+            font-size: 1.5em;
+            margin: 0;
+        }
+
+        .rto-blocked-badge {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border: 2px solid #ef4444;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .parcel-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .parcel-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+
+        .parcel-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        .parcel-card.rto {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+            position: relative;
+        }
+
+        .parcel-card.rto::before {
+            content: "🚫 RTO - BLOCKED";
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ef4444;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 0.75em;
+            font-weight: bold;
+        }
+
+        .parcel-card.unattempt {
+            border-left-color: #f59e0b;
+        }
+
+        .parcel-card.customer-unavailable {
+            border-left-color: #3b82f6;
+        }
+
+        .parcel-awb {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .parcel-status {
+            font-size: 0.9em;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .status-unattempt {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-customer-unavailable {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-rto {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .scan-status {
+            font-size: 0.85em;
+            margin-top: 8px;
+            padding: 5px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .scan-status.scanned {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .scan-status.pending {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Scanning Match Indicator */
+        .match-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .match-indicator.show {
+            display: block;
+        }
+
+        .match-indicator.success {
+            border-left: 4px solid #10b981;
+        }
+
+        .match-indicator.error {
+            border-left: 4px solid #ef4444;
+        }
+
+        .match-indicator.warning {
+            border-left: 4px solid #f59e0b;
+        }
+
+        /* Supervisor Dashboard */
+        .supervisor-panel {
+            background: linear-gradient(135deg, #fef3c7 0%, #fcd34d 100%);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            border: 3px solid #f59e0b;
+        }
+
+        .supervisor-panel h3 {
+            color: #92400e;
+            margin-bottom: 20px;
+            font-size: 1.6em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-bar {
+            background: #e5e7eb;
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 15px 0;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .rider-list {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .rider-item {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+
+        .rider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .rider-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .rider-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .rider-stat {
+            background: #f8f9ff;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .rider-stat-label {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .rider-stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .parcel-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+
+            .section {
+                padding: 20px;
+            }
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .toast.show {
+            display: block;
+        }
+
+        .file-upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .file-upload-area:hover {
+            border-color: #5568d3;
+            background: #f0f2ff;
+        }
+
+        .file-upload-area.dragover {
+            border-color: #4ade80;
+            background: #d1fae5;
+        }
+
+        .upload-status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .upload-status.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 2px solid #10b981;
+        }
+
+        .upload-status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 2px solid #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📦 Courier Management System</h1>
+            <p>Enhanced with Re-assignment & Auto-Match Features</p>
+        </div>
+
+        <!-- Statistics Dashboard -->
+        <div class="stats-grid">
+            <div class="stat-card" onclick="switchTab('scan')">
+                <h3>Today Total</h3>
+                <div class="number" id="totalParcels">0</div>
+            </div>
+            <div class="stat-card" onclick="switchTab('scan')">
+                <h3>Scanned</h3>
+                <div class="number" style="color: #10b981;" id="scannedParcels">0</div>
+            </div>
+            <div class="stat-card" onclick="switchTab('scan')">
+                <h3>Pending</h3>
+                <div class="number" style="color: #f59e0b;" id="pendingParcels">0</div>
+            </div>
+            <div class="stat-card" onclick="switchTab('reassign')">
+                <h3>Yesterday Red</h3>
+                <div class="number" style="color: #ef4444;" id="redParcels">0</div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('scan')">📱 Scan Parcels</div>
+            <div class="tab" onclick="switchTab('reassign')">🔄 Re-assign Yesterday</div>
+            <div class="tab" onclick="switchTab('supervisor')">👨‍💼 Supervisor Dashboard</div>
+            <div class="tab" onclick="switchTab('riders')">👥 Manage Riders</div>
+            <div class="tab" onclick="switchTab('upload')">📤 Upload Files</div>
+            <div class="tab" onclick="switchTab('reports')">📊 Reports</div>
+        </div>
+
+        <!-- Section: Scan Parcels -->
+        <div id="scan" class="section active">
+            <h2>📱 Scan Today's Parcels</h2>
+            
+            <div class="scanner-box">
+                <input type="text" 
+                       id="scanInput" 
+                       class="scanner-input" 
+                       placeholder="Scan or enter AWB number..."
+                       autocomplete="off"
+                       autofocus>
+                <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="scanParcel()">✓ Add to List</button>
+                    <button class="btn btn-danger" onclick="clearScanInput()">✗ Clear</button>
+                </div>
+            </div>
+
+            <div id="scanResults"></div>
+        </div>
+
+        <!-- Section: Re-assign Yesterday's Red Parcels -->
+        <div id="reassign" class="section">
+            <h2>🔄 Re-assign Yesterday's Red Parcels</h2>
+            
+            <div class="alert alert-warning">
+                <span>⚠️</span>
+                <div>
+                    <strong>Instructions:</strong> Yesterday's Unattempt + Customer Unavailable parcels will be re-assigned to riders. 
+                    RTO parcels are <strong>BLOCKED</strong> and shown as alerts only.
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Select Rider to Re-assign Parcels:</label>
+                <select id="reassignRiderSelect" onchange="loadReassignParcels()" class="form-group select">
+                    <option value="">-- Select Rider --</option>
+                </select>
+            </div>
+
+            <div id="reassignContent"></div>
+
+            <!-- Scanner for Re-assigned Parcels -->
+            <div id="reassignScannerSection" style="display: none; margin-top: 25px;">
+                <div class="scanner-box">
+                    <h3 style="margin-bottom: 15px; color: #667eea;">📱 Scan Re-assigned Parcels</h3>
+                    <input type="text" 
+                           id="reassignScanInput" 
+                           class="scanner-input" 
+                           placeholder="Scan AWB to mark as completed..."
+                           autocomplete="off">
+                    <div style="margin-top: 15px;">
+                        <button class="btn btn-success" onclick="scanReassignedParcel()">✓ Mark Scanned</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Supervisor Dashboard -->
+        <div id="supervisor" class="section">
+            <h2>👨‍💼 Supervisor Dashboard</h2>
+            
+            <div class="supervisor-panel">
+                <h3>📊 Re-assignment Progress</h3>
+                <div id="supervisorStats"></div>
+            </div>
+
+            <div id="supervisorContent"></div>
+        </div>
+
+        <!-- Section: Manage Riders -->
+        <div id="riders" class="section">
+            <h2>👥 Manage Riders</h2>
+            
+            <div class="form-group">
+                <label>Rider Name:</label>
+                <input type="text" id="riderName" placeholder="Enter rider name...">
+            </div>
+            <button class="btn btn-success" onclick="addRider()">+ Add Rider</button>
+
+            <div id="ridersList" style="margin-top: 25px;"></div>
+        </div>
+
+        <!-- Section: Upload Files -->
+        <div id="upload" class="section">
+            <h2>📤 Upload Files</h2>
+            
+            <div class="form-group">
+                <label>Upload Today's Status Excel File (Will become yesterday's data tomorrow):</label>
+                <div class="file-upload-area" onclick="document.getElementById('yesterdayFileInput').click()">
+                    <p style="font-size: 2em; margin-bottom: 10px;">📄</p>
+                    <p><strong>Click to upload</strong> or drag & drop</p>
+                    <p style="font-size: 0.9em; color: #666; margin-top: 5px;">Excel (.xlsx) or CSV (.csv)</p>
+                </div>
+                <input type="file" 
+                       id="yesterdayFileInput" 
+                       accept=".xlsx,.xls,.csv" 
+                       style="display: none;"
+                       onchange="handleYesterdayFileUpload(this)">
+                <div id="yesterdayFileUploadStatus"></div>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <button class="btn btn-warning" onclick="viewYesterdayStatus()">👁️ View Yesterday's Data</button>
+                <button class="btn btn-danger" onclick="clearYesterdayStatus()">🗑️ Clear Yesterday's Data</button>
+            </div>
+        </div>
+
+        <!-- Section: Reports -->
+        <div id="reports" class="section">
+            <h2>📊 Reports & Analytics</h2>
+            
+            <div style="display: grid; gap: 15px;">
+                <button class="btn btn-primary" onclick="generateDailyReport()">📥 Download Daily Report</button>
+                <button class="btn btn-success" onclick="generateReassignmentReport()">📥 Download Re-assignment Report</button>
+                <button class="btn btn-warning" onclick="viewMissingParcels()">⚠️ View Missing Parcels</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Match Indicator -->
+    <div id="matchIndicator" class="match-indicator"></div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════
+        // DATA STORAGE
+        // ═══════════════════════════════════════════════════════════
+        
+        let riders = [];
+        let todayParcels = [];
+        let yesterdayStatus = {}; // { riderName: { awb: status } }
+        let redParcels = {}; // { riderName: { RTO: [], Unattempt: [], 'Customer Unavailable': [], scanned: [] } }
+        let reassignedParcels = {}; // { riderName: { awb: { status, scanned } } }
+
+        // ═══════════════════════════════════════════════════════════
+        // INITIALIZATION
+        // ═══════════════════════════════════════════════════════════
+        
+        function init() {
+            loadData();
+            updateStats();
+            updateRidersList();
+            updateRiderSelects();
+            
+            // Auto-focus scan input
+            document.getElementById('scanInput').focus();
+            
+            // Enter key handlers
+            document.getElementById('scanInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    scanParcel();
+                }
+            });
+            
+            document.getElementById('reassignScanInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    scanReassignedParcel();
+                }
+            });
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('courierData');
+            if (saved) {
+                const data = JSON.parse(saved);
+                riders = data.riders || [];
+                todayParcels = data.todayParcels || [];
+                yesterdayStatus = data.yesterdayStatus || {};
+                redParcels = data.redParcels || {};
+                reassignedParcels = data.reassignedParcels || {};
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('courierData', JSON.stringify({
+                riders,
+                todayParcels,
+                yesterdayStatus,
+                redParcels,
+                reassignedParcels
+            }));
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // TAB SWITCHING
+        // ═══════════════════════════════════════════════════════════
+        
+        function switchTab(tabName) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            
+            // Show selected section
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            // Refresh content
+            if (tabName === 'reassign') {
+                updateRiderSelects();
+            } else if (tabName === 'supervisor') {
+                updateSupervisorDashboard();
+            } else if (tabName === 'riders') {
+                updateRidersList();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // STATISTICS
+        // ═══════════════════════════════════════════════════════════
+        
+        function updateStats() {
+            const totalRed = Object.values(redParcels).reduce((sum, rider) => {
+                return sum + rider.RTO.length + rider.Unattempt.length + rider['Customer Unavailable'].length;
+            }, 0);
+
+            document.getElementById('totalParcels').textContent = todayParcels.length;
+            document.getElementById('scannedParcels').textContent = todayParcels.filter(p => p.scanned).length;
+            document.getElementById('pendingParcels').textContent = todayParcels.filter(p => !p.scanned).length;
+            document.getElementById('redParcels').textContent = totalRed;
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // RIDER MANAGEMENT
+        // ═══════════════════════════════════════════════════════════
+        
+        function addRider() {
+            const name = document.getElementById('riderName').value.trim();
+            if (!name) {
+                showToast('⚠️ Please enter rider name', 'warning');
+                return;
+            }
+            
+            if (riders.find(r => r.name.toLowerCase() === name.toLowerCase())) {
+                showToast('⚠️ Rider already exists', 'warning');
+                return;
+            }
+            
+            riders.push({ name, id: Date.now() });
+            saveData();
+            updateRidersList();
+            updateRiderSelects();
+            document.getElementById('riderName').value = '';
+            showToast('✅ Rider added successfully', 'success');
+        }
+
+        function deleteRider(id) {
+            if (confirm('Are you sure you want to delete this rider?')) {
+                riders = riders.filter(r => r.id !== id);
+                saveData();
+                updateRidersList();
+                updateRiderSelects();
+                showToast('✅ Rider deleted', 'success');
+            }
+        }
+
+        function updateRidersList() {
+            const list = document.getElementById('ridersList');
+            if (riders.length === 0) {
+                list.innerHTML = '<div class="alert alert-info">No riders added yet.</div>';
+                return;
+            }
+            
+            list.innerHTML = riders.map(rider => `
+                <div class="rider-item">
+                    <div class="rider-header">
+                        <div class="rider-name">👤 ${rider.name}</div>
+                        <button class="btn btn-danger btn-small" onclick="deleteRider(${rider.id})">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateRiderSelects() {
+            const select = document.getElementById('reassignRiderSelect');
+            select.innerHTML = '<option value="">-- Select Rider --</option>' +
+                riders.map(r => `<option value="${r.name}">${r.name}</option>`).join('');
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // SCAN TODAY'S PARCELS
+        // ═══════════════════════════════════════════════════════════
+        
+        function scanParcel() {
+            const input = document.getElementById('scanInput');
+            const awb = input.value.trim().toUpperCase();
+            
+            if (!awb) {
+                showToast('⚠️ Please enter AWB number', 'warning');
+                return;
+            }
+            
+            // Check if already scanned today
+            if (todayParcels.find(p => p.awb === awb)) {
+                showToast('⚠️ Already scanned today', 'warning');
+                input.value = '';
+                input.focus();
+                return;
+            }
+            
+            // Add to today's list
+            todayParcels.push({
+                awb,
+                scanned: true,
+                timestamp: new Date().toISOString()
+            });
+            
+            saveData();
+            updateStats();
+            showToast('✅ Parcel scanned successfully', 'success');
+            input.value = '';
+            input.focus();
+        }
+
+        function clearScanInput() {
+            document.getElementById('scanInput').value = '';
+            document.getElementById('scanInput').focus();
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // RE-ASSIGNMENT SECTION
+        // ═══════════════════════════════════════════════════════════
+        
+        function loadReassignParcels() {
+            const riderName = document.getElementById('reassignRiderSelect').value;
+            const content = document.getElementById('reassignContent');
+            const scannerSection = document.getElementById('reassignScannerSection');
+            
+            if (!riderName) {
+                content.innerHTML = '';
+                scannerSection.style.display = 'none';
+                return;
+            }
+            
+            if (!redParcels[riderName]) {
+                content.innerHTML = '<div class="alert alert-info">No red parcels for this rider.</div>';
+                scannerSection.style.display = 'none';
+                return;
+            }
+            
+            const rider = redParcels[riderName];
+            const allParcels = [
+                ...rider.Unattempt.map(awb => ({ awb, status: 'Unattempt', assignable: true })),
+                ...rider['Customer Unavailable'].map(awb => ({ awb, status: 'Customer Unavailable', assignable: true })),
+                ...rider.RTO.map(awb => ({ awb, status: 'RTO', assignable: false }))
+            ];
+            
+            // Initialize reassigned tracking if not exists
+            if (!reassignedParcels[riderName]) {
+                reassignedParcels[riderName] = {};
+                allParcels.filter(p => p.assignable).forEach(p => {
+                    reassignedParcels[riderName][p.awb] = { status: p.status, scanned: false };
+                });
+                saveData();
+            }
+            
+            const assignable = allParcels.filter(p => p.assignable);
+            const blocked = allParcels.filter(p => !p.assignable);
+            const scannedCount = Object.values(reassignedParcels[riderName]).filter(p => p.scanned).length;
+            
+            content.innerHTML = `
+                <div class="reassign-container">
+                    <div class="reassign-header">
+                        <h3>📋 ${riderName}'s Yesterday Red Parcels</h3>
+                        <div class="rto-blocked-badge">
+                            🚫 ${blocked.length} RTO Blocked
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <div>
+                            <strong>Summary:</strong><br>
+                            Total Re-assignable: ${assignable.length}<br>
+                            Scanned: ${scannedCount}<br>
+                            Pending: ${assignable.length - scannedCount}<br>
+                            RTO (Blocked): ${blocked.length}
+                        </div>
+                    </div>
+                    
+                    ${assignable.length > 0 ? `
+                        <h4 style="margin-top: 20px; margin-bottom: 15px; color: #667eea;">✓ Re-assignable Parcels</h4>
+                        <div class="parcel-grid">
+                            ${assignable.map(p => {
+                                const isScanned = reassignedParcels[riderName][p.awb]?.scanned || false;
+                                return `
+                                    <div class="parcel-card ${p.status.toLowerCase().replace(' ', '-')}">
+                                        <div class="parcel-awb">${p.awb}</div>
+                                        <div class="parcel-status status-${p.status.toLowerCase().replace(' ', '-')}">
+                                            ${p.status}
+                                        </div>
+                                        <div class="scan-status ${isScanned ? 'scanned' : 'pending'}">
+                                            ${isScanned ? '✓ Scanned' : '⏳ Pending'}
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    ${blocked.length > 0 ? `
+                        <h4 style="margin-top: 30px; margin-bottom: 15px; color: #ef4444;">🚫 RTO Parcels (Blocked - Alert Only)</h4>
+                        <div class="parcel-grid">
+                            ${blocked.map(p => `
+                                <div class="parcel-card rto">
+                                    <div class="parcel-awb">${p.awb}</div>
+                                    <div class="parcel-status status-rto">RTO</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            scannerSection.style.display = assignable.length > 0 ? 'block' : 'none';
+            document.getElementById('reassignScanInput').focus();
+        }
+
+        function scanReassignedParcel() {
+            const riderName = document.getElementById('reassignRiderSelect').value;
+            const input = document.getElementById('reassignScanInput');
+            const awb = input.value.trim().toUpperCase();
+            
+            if (!awb) {
+                showToast('⚠️ Please enter AWB number', 'warning');
+                return;
+            }
+            
+            if (!reassignedParcels[riderName] || !reassignedParcels[riderName][awb]) {
+                showMatchIndicator('❌ Not in re-assigned list', 'error');
+                input.value = '';
+                input.focus();
+                return;
+            }
+            
+            if (reassignedParcels[riderName][awb].scanned) {
+                showMatchIndicator('⚠️ Already scanned', 'warning');
+                input.value = '';
+                input.focus();
+                return;
+            }
+            
+            // Check if it's an RTO (shouldn't be in reassignedParcels, but double-check)
+            const rider = redParcels[riderName];
+            if (rider && rider.RTO.includes(awb)) {
+                showMatchIndicator('🚫 RTO parcel - Cannot assign', 'error');
+                input.value = '';
+                input.focus();
+                return;
+            }
+            
+            // Mark as scanned
+            reassignedParcels[riderName][awb].scanned = true;
+            reassignedParcels[riderName][awb].scanTimestamp = new Date().toISOString();
+            
+            saveData();
+            loadReassignParcels();
+            updateSupervisorDashboard();
+            showMatchIndicator(`✅ ${awb} - Matched & Scanned`, 'success');
+            
+            input.value = '';
+            input.focus();
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // SUPERVISOR DASHBOARD
+        // ═══════════════════════════════════════════════════════════
+        
+        function updateSupervisorDashboard() {
+            const statsDiv = document.getElementById('supervisorStats');
+            const contentDiv = document.getElementById('supervisorContent');
+            
+            if (Object.keys(redParcels).length === 0) {
+                statsDiv.innerHTML = '<div class="alert alert-info">No yesterday data available.</div>';
+                contentDiv.innerHTML = '';
+                return;
+            }
+            
+            // Calculate overall stats
+            let totalReassignable = 0;
+            let totalScanned = 0;
+            
+            Object.keys(redParcels).forEach(riderName => {
+                const rider = redParcels[riderName];
+                const assignable = rider.Unattempt.length + rider['Customer Unavailable'].length;
+                totalReassignable += assignable;
+                
+                if (reassignedParcels[riderName]) {
+                    totalScanned += Object.values(reassignedParcels[riderName]).filter(p => p.scanned).length;
+                }
+            });
+            
+            const progress = totalReassignable > 0 ? Math.round((totalScanned / totalReassignable) * 100) : 0;
+            
+            statsDiv.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div class="rider-stat">
+                        <div class="rider-stat-label">Total Re-assignable</div>
+                        <div class="rider-stat-value" style="color: #667eea;">${totalReassignable}</div>
+                    </div>
+                    <div class="rider-stat">
+                        <div class="rider-stat-label">Scanned</div>
+                        <div class="rider-stat-value" style="color: #10b981;">${totalScanned}</div>
+                    </div>
+                    <div class="rider-stat">
+                        <div class="rider-stat-label">Pending</div>
+                        <div class="rider-stat-value" style="color: #f59e0b;">${totalReassignable - totalScanned}</div>
+                    </div>
+                    <div class="rider-stat">
+                        <div class="rider-stat-label">Progress</div>
+                        <div class="rider-stat-value" style="color: #667eea;">${progress}%</div>
+                    </div>
+                </div>
+                
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${progress}%">${progress}%</div>
+                </div>
+            `;
+            
+            // Generate rider-wise breakdown
+            let riderHTML = '<div class="rider-list">';
+            
+            Object.keys(redParcels).forEach(riderName => {
+                const rider = redParcels[riderName];
+                const assignable = rider.Unattempt.length + rider['Customer Unavailable'].length;
+                const rto = rider.RTO.length;
+                const scanned = reassignedParcels[riderName] ? 
+                    Object.values(reassignedParcels[riderName]).filter(p => p.scanned).length : 0;
+                const pending = assignable - scanned;
+                const riderProgress = assignable > 0 ? Math.round((scanned / assignable) * 100) : 0;
+                
+                riderHTML += `
+                    <div class="rider-item">
+                        <div class="rider-header">
+                            <div class="rider-name">👤 ${riderName}</div>
+                            <button class="btn btn-primary btn-small" onclick="showMissingForRider('${riderName}')">
+                                View Missing (${pending})
+                            </button>
+                        </div>
+                        <div class="rider-stats">
+                            <div class="rider-stat">
+                                <div class="rider-stat-label">Re-assignable</div>
+                                <div class="rider-stat-value" style="color: #667eea;">${assignable}</div>
+                            </div>
+                            <div class="rider-stat">
+                                <div class="rider-stat-label">Scanned</div>
+                                <div class="rider-stat-value" style="color: #10b981;">${scanned}</div>
+                            </div>
+                            <div class="rider-stat">
+                                <div class="rider-stat-label">Pending</div>
+                                <div class="rider-stat-value" style="color: #f59e0b;">${pending}</div>
+                            </div>
+                            <div class="rider-stat">
+                                <div class="rider-stat-label">RTO (Blocked)</div>
+                                <div class="rider-stat-value" style="color: #ef4444;">${rto}</div>
+                            </div>
+                        </div>
+                        <div class="progress-bar" style="margin-top: 15px;">
+                            <div class="progress-fill" style="width: ${riderProgress}%">${riderProgress}%</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            riderHTML += '</div>';
+            contentDiv.innerHTML = riderHTML;
+        }
+
+        function showMissingForRider(riderName) {
+            const rider = redParcels[riderName];
+            if (!rider) return;
+            
+            const allAssignable = [
+                ...rider.Unattempt.map(awb => ({ awb, status: 'Unattempt' })),
+                ...rider['Customer Unavailable'].map(awb => ({ awb, status: 'Customer Unavailable' }))
+            ];
+            
+            const missing = allAssignable.filter(p => {
+                return !reassignedParcels[riderName] || !reassignedParcels[riderName][p.awb]?.scanned;
+            });
+            
+            if (missing.length === 0) {
+                alert(`✅ All parcels scanned for ${riderName}!`);
+                return;
+            }
+            
+            const missingList = missing.map((p, idx) => 
+                `${idx + 1}. ${p.awb} (${p.status})`
+            ).join('\n');
+            
+            alert(`❌ Missing Parcels for ${riderName}:\n\nTotal: ${missing.length}\n\n${missingList}`);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // FILE UPLOAD
+        // ═══════════════════════════════════════════════════════════
+        
+        function handleYesterdayFileUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const statusDiv = document.getElementById('yesterdayFileUploadStatus');
+            statusDiv.innerHTML = '<div class="upload-status" style="background: #dbeafe; color: #1e40af;">⏳ Processing file...</div>';
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    if (file.name.endsWith('.csv')) {
+                        parseYesterdayCSV(e.target.result);
+                    } else {
+                        parseYesterdayExcel(e.target.result);
+                    }
+                } catch (error) {
+                    statusDiv.innerHTML = `<div class="upload-status error">❌ Error: ${error.message}</div>`;
+                }
+            };
+            
+            if (file.name.endsWith('.csv')) {
+                reader.readAsText(file);
+            } else {
+                reader.readAsBinaryString(file);
+            }
+        }
+
+        function parseYesterdayExcel(data) {
+            const workbook = XLSX.read(data, { type: 'binary' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+            
+            processYesterdayData(rows);
+        }
+
+        function parseYesterdayCSV(text) {
+            const rows = text.split('\n').map(line => 
+                line.split(',').map(cell => cell.trim())
+            );
+            
+            processYesterdayData(rows);
+        }
+
+        function processYesterdayData(rows) {
+            const statusDiv = document.getElementById('yesterdayFileUploadStatus');
+            
+            yesterdayStatus = {};
+            redParcels = {};
+            reassignedParcels = {};
+            
+            let processed = 0;
+            let errors = 0;
+            
+            // Skip header row
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (row.length < 3) continue;
+                
+                const riderName = String(row[0]).trim();
+                const awb = String(row[1]).trim().toUpperCase();
+                const statusRaw = String(row[2]).trim().toLowerCase();
+                
+                if (!riderName || !awb || !statusRaw) {
+                    errors++;
+                    continue;
+                }
+                
+                // Normalize status
+                let status;
+                if (statusRaw.includes('deliver') && !statusRaw.includes('not') && !statusRaw.includes('un')) {
+                    status = 'Delivered';
+                } else if (statusRaw.includes('rto')) {
+                    status = 'RTO';
+                } else if (statusRaw.includes('unattempt') || statusRaw.includes('not attempt')) {
+                    status = 'Unattempt';
+                } else if (statusRaw.includes('customer') || statusRaw.includes('unavailable')) {
+                    status = 'Customer Unavailable';
+                } else {
+                    errors++;
+                    continue;
+                }
+                
+                // Store in yesterdayStatus
+                if (!yesterdayStatus[riderName]) {
+                    yesterdayStatus[riderName] = {};
+                }
+                yesterdayStatus[riderName][awb] = status;
+                
+                // Add to redParcels if not delivered
+                if (status !== 'Delivered') {
+                    if (!redParcels[riderName]) {
+                        redParcels[riderName] = {
+                            'RTO': [],
+                            'Unattempt': [],
+                            'Customer Unavailable': []
+                        };
+                    }
+                    redParcels[riderName][status].push(awb);
+                }
+                
+                processed++;
+            }
+            
+            saveData();
+            updateStats();
+            updateRiderSelects();
+            
+            statusDiv.innerHTML = `
+                <div class="upload-status success">
+                    ✅ File processed successfully!<br>
+                    📦 Total records: ${processed}<br>
+                    ${errors > 0 ? `⚠️ Skipped: ${errors} invalid records<br>` : ''}
+                    🔴 Red parcels loaded for re-assignment
+                </div>
+            `;
+            
+            showToast('✅ Yesterday\'s data loaded successfully', 'success');
+        }
+
+        function viewYesterdayStatus() {
+            if (Object.keys(yesterdayStatus).length === 0) {
+                alert('⚠️ No yesterday data available. Please upload a file first.');
+                return;
+            }
+            
+            let summary = '📊 Yesterday\'s Status Summary\n\n';
+            
+            Object.keys(yesterdayStatus).forEach(riderName => {
+                const statuses = Object.values(yesterdayStatus[riderName]);
+                const delivered = statuses.filter(s => s === 'Delivered').length;
+                const rto = statuses.filter(s => s === 'RTO').length;
+                const unattempt = statuses.filter(s => s === 'Unattempt').length;
+                const customerUnavailable = statuses.filter(s => s === 'Customer Unavailable').length;
+                
+                summary += `\n👤 ${riderName}:\n`;
+                summary += `  ✅ Delivered: ${delivered}\n`;
+                summary += `  🚫 RTO: ${rto}\n`;
+                summary += `  ⏳ Unattempt: ${unattempt}\n`;
+                summary += `  📞 Customer Unavailable: ${customerUnavailable}\n`;
+            });
+            
+            alert(summary);
+        }
+
+        function clearYesterdayStatus() {
+            if (Object.keys(yesterdayStatus).length === 0) {
+                alert('⚠️ No data to clear.');
+                return;
+            }
+            
+            if (confirm('⚠️ Are you sure you want to clear yesterday\'s data?\n\nThis will remove all red parcels and re-assignment tracking.')) {
+                yesterdayStatus = {};
+                redParcels = {};
+                reassignedParcels = {};
+                saveData();
+                updateStats();
+                document.getElementById('yesterdayFileUploadStatus').innerHTML = '';
+                showToast('✅ Yesterday\'s data cleared', 'success');
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // REPORTS
+        // ═══════════════════════════════════════════════════════════
+        
+        function generateDailyReport() {
+            if (todayParcels.length === 0) {
+                alert('⚠️ No data to generate report.');
+                return;
+            }
+            
+            const csv = 'AWB,Scanned,Timestamp\n' +
+                todayParcels.map(p => 
+                    `${p.awb},${p.scanned ? 'Yes' : 'No'},${p.timestamp || ''}`
+                ).join('\n');
+            
+            downloadCSV(csv, `daily_report_${new Date().toISOString().split('T')[0]}.csv`);
+            showToast('✅ Daily report downloaded', 'success');
+        }
+
+        function generateReassignmentReport() {
+            if (Object.keys(reassignedParcels).length === 0) {
+                alert('⚠️ No re-assignment data available.');
+                return;
+            }
+            
+            let csv = 'Rider,AWB,Status,Scanned,Scan Timestamp\n';
+            
+            Object.keys(reassignedParcels).forEach(riderName => {
+                Object.keys(reassignedParcels[riderName]).forEach(awb => {
+                    const parcel = reassignedParcels[riderName][awb];
+                    csv += `${riderName},${awb},${parcel.status},${parcel.scanned ? 'Yes' : 'No'},${parcel.scanTimestamp || ''}\n`;
+                });
+            });
+            
+            downloadCSV(csv, `reassignment_report_${new Date().toISOString().split('T')[0]}.csv`);
+            showToast('✅ Re-assignment report downloaded', 'success');
+        }
+
+        function viewMissingParcels() {
+            if (Object.keys(reassignedParcels).length === 0) {
+                alert('⚠️ No re-assignment data available.');
+                return;
+            }
+            
+            let missing = [];
+            
+            Object.keys(reassignedParcels).forEach(riderName => {
+                Object.keys(reassignedParcels[riderName]).forEach(awb => {
+                    const parcel = reassignedParcels[riderName][awb];
+                    if (!parcel.scanned) {
+                        missing.push(`${riderName}: ${awb} (${parcel.status})`);
+                    }
+                });
+            });
+            
+            if (missing.length === 0) {
+                alert('✅ All re-assigned parcels have been scanned!');
+            } else {
+                alert(`❌ Missing Parcels (${missing.length}):\n\n` + missing.join('\n'));
+            }
+        }
+
+        function downloadCSV(content, filename) {
+            const blob = new Blob([content], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // UI HELPERS
+        // ═══════════════════════════════════════════════════════════
+        
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast show ${type}`;
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function showMatchIndicator(message, type = 'success') {
+            const indicator = document.getElementById('matchIndicator');
+            indicator.textContent = message;
+            indicator.className = `match-indicator show ${type}`;
+            
+            setTimeout(() => {
+                indicator.classList.remove('show');
+            }, 2000);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // INITIALIZE ON LOAD
+        // ═══════════════════════════════════════════════════════════
+        
+        window.onload = init;
+    </script>
+</body>
+</html>
